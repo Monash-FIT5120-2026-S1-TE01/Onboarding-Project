@@ -30,7 +30,7 @@ async def root():
     Root endpoint to verify the server is live.
     """
     return {
-        "message": "Azure App Service is LIVE!",
+        "message": "Azure App Service is LIVE.",
         "status": "Ready",
         "docs": "/docs",
         "python_version": "3.12"
