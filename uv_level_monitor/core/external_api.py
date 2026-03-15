@@ -1,3 +1,0 @@
-"""
-Gateway to external api
-"""
