@@ -1,14 +1,58 @@
-"""
-For pydantic models and placeholder
-"""
-import os
-from typing import Optional, List, Dict, Literal, Union, Self
-from pydantic import BaseModel, computed_field, Field, field_validator, model_validator
-from enum import IntEnum, Enum, StrEnum
+from pydantic import (
+    BaseModel,
+    Field,
+    computed_field,
+    model_validator
+)
+from enum import StrEnum, Enum
+from typing import (
+    List,
+    Literal,
+    Dict,
+    Union,
+    Self,
+    Optional
+)
 from functools import lru_cache
 
 # ===================================================================
-# Enum class
+# GeocodingClient
+
+class CityToCoordRequestParams(BaseModel):
+    city: str
+    format: str = "jsonv2"
+    limit: int = 1
+
+class CityToCoordResponseParams(BaseModel):
+    city: str
+    lat: float = Field(..., ge=-90, le=90)
+    lon: float = Field(..., ge=-180, le=180)
+    display_name: str
+
+class CoordToCityRequestParams(BaseModel):
+    lat: float = Field(default=-37.8142454, ge=-90, le=90)
+    lon: float = Field(default=144.9631732, ge=-180, le=180)
+    format: str = "jsonv2"
+    zoom: int = 10
+
+class CoordToCityResponseParams(BaseModel):
+    lat: float = Field(ge=-90, le=90)
+    lon: float = Field(ge=-180, le=180)
+    city: str
+    country: str
+    display_name: str
+
+# ===================================================================
+# OpenMeteoClient
+
+class WeatherVariable(StrEnum):
+    """
+    OpenMeteoAPI hourly enum class
+    """
+    TEMPERATURE  = "temperature_2m"
+    WEATHER_CODE = "weather_code"
+    HUMIDITY = "relative_humidity_2m"
+    UV_INDEX = "uv_index"
 
 class WeatherGroup(Enum):
     """
@@ -38,50 +82,6 @@ class WeatherGroup(Enum):
                 return group
         return None
 
-class WeatherVariable(StrEnum):
-    """
-    OpenMeteoAPI hourly enum class
-    """
-    TEMPERATURE  = "temperature_2m"
-    WEATHER_CODE = "weather_code"
-    HUMIDITY = "relative_humidity_2m"
-    UV_INDEX = "uv_index"
-
-    @classmethod
-    def get_query_string(cls) -> str:
-        """
-        Get the string format for the api params
-        """
-        return ",".join(cls)
-
-# ===================================================================
-# Pydantic type class
-
-class ClothRecommendQuery(BaseModel):
-    uv_level: float
-    weather_code: int
-
-    @computed_field
-    @property
-    def weather_category(self) -> str:
-        """
-        Mapping weather category according to weather id
-        """
-        group = WeatherGroup.from_code(code=self.weather_code)
-        return group.label if group else "Unknown"
-
-    @computed_field
-    @property
-    def is_rainy(self) -> bool:
-        """
-        Judging whether you need umbrella
-        """
-        group = WeatherGroup.from_code(code=self.weather_code)
-        return group == WeatherGroup.RAIN
-
-# -------------------------------------------------------------------
-# Open meteo api
-
 class OpenMeteoAPIRequestParams(BaseModel):
     latitude: float = Field(..., ge=-90, le=90)
     longitude: float = Field(..., ge=-180, le=180)
@@ -90,7 +90,8 @@ class OpenMeteoAPIRequestParams(BaseModel):
         description = "List of weather variables to retrieve"
     )
     timezone: str = "Australia/Sydney"
-    forecast_hours: int = Field(..., ge=1)
+    forecast_hours: int = Field(default=12, ge=1)
+    past_hours: int = Field(default=12, ge=1)
 
     @computed_field
     @property
@@ -129,39 +130,3 @@ class OpenMeteoAPIResponseParams(BaseModel):
                 raise ValueError(f"[Upstream API Error] Field '{key}' length {val_len} mismatch 'time' length {target_len}")
 
         return self
-
-# -------------------------------------------------------------------
-# City location
-
-class CityRequestParams(BaseModel):
-    city: str = "Melbourne"
-    format: str = "jsonv2"
-    limit: int = 1
-
-class CityResponseParams(BaseModel):
-    city: str
-    lat: float = Field(..., ge=-90, le=90)
-    lon: float = Field(..., ge=-180, le=180)
-    display_name: str
-
-class CoordRequestParams(BaseModel):
-    lat: float = Field(default=-37.8142454, ge=-90, le=90)
-    lon: float = Field(default=144.9631732, ge=-180, le=180)
-    format: str = "jsonv2"
-    zoom: int = 10
-
-class CoordResponseParams(BaseModel):
-    lat: float = Field(ge=-90, le=90)
-    lon: float = Field(ge=-180, le=180)
-    city: str
-    country: str
-    display_name: str
-
-# ===================================================================
-
-class UVLevelQuery(BaseModel):
-    city: str
-    timestamp: int
-
-class UVUsageParams(BaseModel):
-    uv_level: float
