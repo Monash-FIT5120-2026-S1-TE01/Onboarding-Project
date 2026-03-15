@@ -51,7 +51,7 @@ class WeatherVariable(StrEnum):
     """
     TEMPERATURE  = "temperature_2m"
     WEATHER_CODE = "weather_code"
-    HUMIDITY = "relative_humidity_2m" ## TODO: Remove
+    HUMIDITY = "relative_humidity_2m"
     UV_INDEX = "uv_index"
 
 class WeatherGroup(Enum):
@@ -102,9 +102,9 @@ class OpenMeteoAPIRequestParams(BaseModel):
         return ",".join(self.hourly_params)
 
 class OpenMeteoAPIResponseParams(BaseModel):
-    latitude: float = Field(..., ge=-90, le=90)    ## TODO: Remove
-    longitude: float = Field(..., ge=-180, le=180) ## TODO: Remove
-    timezone: Literal["Australia/Sydney"] = "Australia/Sydney" ## TODO: Remove
+    latitude: float = Field(..., ge=-90, le=90)
+    longitude: float = Field(..., ge=-180, le=180)
+    timezone: Literal["Australia/Sydney"] = "Australia/Sydney"
     hourly: Dict[str, List[Union[str, float, int]]]
 
     @model_validator(mode="after")
